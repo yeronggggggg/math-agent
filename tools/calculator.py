@@ -1,35 +1,26 @@
 from langchain_core.tools import tool
+import sympy as sp
+
 @tool
-def calculate(a, b, operation):
+def calculator(expression:str):
     """
-    对两个数字进行四则运算。
+    进行数学运算
 
     参数：
-        a: 第一个数字
-        b: 第二个数字
-        operation: 运算符，支持 +、-、*、/
+        expression: 数学表达式字符串，例如 "3 + 5 * (2 - 8)"
 
     返回：
         计算结果；输入无效时返回错误信息。
     """
     try:
-        a = float(a)
-        b = float(b)
-    except ValueError:
-        return "输入的数字无效，请输入有效的数字。"
+        if not expression:
+            return "输入为空，请提供一个数学表达式。"
+        acc_result = sp.sympify(expression)
+        app_result = sp.N(acc_result)
+        return f"精确结果为 {acc_result}，近似结果为 {app_result}"
+    except Exception as e:
+        return f"计算错误：{str(e)}"
 
-    if operation == "+":
-        return a + b
-    elif operation == "-":
-        return a - b
-    elif operation == "*":
-        return a * b
-    elif operation == "/":
-        if b == 0:
-            return "除数不能为零。"
-        return a / b
-    else:
-        return "无效的运算符，请输入 +、-、* 或 /。"
 
 
 import ast

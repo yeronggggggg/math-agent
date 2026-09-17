@@ -10,56 +10,6 @@ model = ChatOpenAI(
 )
 
 
-from tools.calculator import calculate
-
-#result = calculate.invoke({"a": 5, "b": 3, "operation": "+"})
-#print(f"The result of adding 5 and 3 is: {result}")
-
-#print("工具名称：", calculate.name)
-#print("工具说明：", calculate.description)
-#print("参数结构：", calculate.args)
-
-#response = model.invoke("你好，请只回复：连接成功")
-#print(response.content)
-
-#model_with_tools = model.bind_tools([calculate])
-#response = model_with_tools.invoke("你好")
-#print(response.tool_calls)
-
-#tool_call = response.tool_calls[0]
-#result = calculate.invoke(tool_call["args"])
-#print("计算结果：", result)
-
-#question = input("请输入计算问题：")
-#response = model_with_tools.invoke(question)
-#tool_message = calculate.invoke(response.tool_calls[0])
-#final_response = model_with_tools.invoke([
-#    ("human", question),
-#    response,
-#    tool_message
-#])
-#print(final_response.content)
-
-
-# model_with_tools = model.bind_tools([calculate])
-# while True:
-#     question = input("请输入计算问题（或输入 'exit' 退出）：")
-#     if question.lower() == 'exit':
-#         break
-
-#     response = model_with_tools.invoke(question)
-#     if response.tool_calls:
-#         tool_message = calculate.invoke(response.tool_calls[0])
-
-#         final_response = model_with_tools.invoke([
-#             ("human", question),
-#             response,
-#             tool_message
-#         ])
-
-#         print(final_response.content)
-#     else:
-#         print(response.content)
 
 from tools.calculator import calculate_adv
 
@@ -124,20 +74,71 @@ from tools.equation_slover import solve_equation
 
 # print(repr(result))
 
-while True:
-    question = input("请输入方程(组)（例如 '2*x + 3 = 7' , 'x + y = 10'），退出请输入'exit'：")
-    if question.lower() == 'exit':
-        break
-    model_with_equation_tools = model.bind_tools([solve_equation])
-    response = model_with_equation_tools.invoke(f"请使用方程求解工具求解：{question}")
+# while True:
+#     question = input("请输入方程(组)（例如 '2*x + 3 = 7' , 'x + y = 10'），退出请输入'exit'：")
+#     if question.lower() == 'exit':
+#         break
+#     model_with_equation_tools = model.bind_tools([solve_equation])
+#     response = model_with_equation_tools.invoke(f"请使用方程求解工具求解：{question}")
+#     if not response.tool_calls:
+#         print(response.content)
+#         continue
+#     tool_call = response.tool_calls[0]
+#     tool_message = solve_equation.invoke(tool_call)
+#     final_response = model_with_equation_tools.invoke([
+#     ("human", question),
+#     response,
+#     tool_message
+#     ])
+#     print(final_response.content)
+
+
+from tools.calculator import calculator
+# print(calculator.invoke({"expression": "(2 + 3) * 4"}))
+# print(calculator.invoke({"expression": "sin(pi / 2)"}))
+# print(calculator.invoke({"expression": "sqrt(2)"}))
+# print(calculator.invoke({"expression": "1 / 0"}))
+# print(calculator.invoke({"expression": ""}))
+
+# while True:
+#     question = input("请输数学问题（例如 'sin(pi / 2)的值'），退出请输入'exit'：")
+#     if question.lower() == 'exit':
+#         break
+#     model_with_equation_tools = model.bind_tools([calculator])
+#     response = model_with_equation_tools.invoke(f"请使用计算器工具计算：{question}")
+#     if not response.tool_calls:
+#         print(response.content)
+#         continue
+#     tool_call = response.tool_calls[0]
+#     tool_message = calculator.invoke(tool_call)
+#     final_response = model_with_equation_tools.invoke([
+#     ("human", question),
+#     response,
+#     tool_message
+#     ])
+#     print(final_response.content)
+
+tools=[calculator, calculate_adv, solve_equation]
+model_with_tools = model.bind_tools(tools)
+tool_map={tool.name: tool for tool in tools}
+question = input(f"请计算表达式 (2 + 3) * 4 的值，并求解方程 x + y = 5, x - y = 1：")
+def ask_math_question(question:str):
+    message = [
+        ("system", "You are a helpful math assistant. Please answer the user's questions using the available tools if necessary."),
+        ("human", question)
+    ]
+
+    response = model_with_tools.invoke(message)
+    #print("模型响应：", response.content)
+    #print("工具调用：", response.tool_calls)
     if not response.tool_calls:
-        print(response.content)
-        continue
-    tool_call = response.tool_calls[0]
-    tool_message = solve_equation.invoke(tool_call)
-    final_response = model_with_equation_tools.invoke([
-    ("human", question),
-    response,
-    tool_message
-    ])
-    print(final_response.content)
+        return response.content
+    message.append(response)
+    for tool_call in response.tool_calls:
+        tool = tool_map[tool_call['name']]
+        tool_message = tool.invoke(tool_call)
+        message.append(tool_message)
+
+    final_response = model_with_tools.invoke(message)
+    return final_response.content
+print(ask_math_question(question))
