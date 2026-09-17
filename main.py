@@ -118,27 +118,50 @@ from tools.calculator import calculator
 #     ])
 #     print(final_response.content)
 
-tools=[calculator, calculate_adv, solve_equation]
-model_with_tools = model.bind_tools(tools)
-tool_map={tool.name: tool for tool in tools}
-question = input(f"请计算表达式 (2 + 3) * 4 的值，并求解方程 x + y = 5, x - y = 1：")
-def ask_math_question(question:str):
-    message = [
-        ("system", "You are a helpful math assistant. Please answer the user's questions using the available tools if necessary."),
-        ("human", question)
-    ]
+from tools.differentiate import differentiate
+# while True:
+#     question=input("请输入求导问题（例如 '对 x 求导 x**2 + 3*x + 2'），退出请输入'exit'：")
+#     if question.lower() == 'exit':
+#         break 
+#     model_with_differentiate_tools = model.bind_tools([differentiate])
+#     response = model_with_differentiate_tools.invoke(f"请使用求导工具求解：{question}")
+#     if not response.tool_calls:
+#         print(response.content)
+#         continue
+#     tool_call = response.tool_calls[0]
+#     tool_message = differentiate.invoke(tool_call)
+#     final_response = model_with_differentiate_tools.invoke([
+#         ("human", question),
+#         response,
+#         tool_message
+#     ])
+#     print(final_response.content)
 
+
+tools = [calculator, solve_equation, differentiate]
+tool_map={tool.name: tool for tool in tools}
+def ask_math_question(question:str):
+    message=[
+        ("system", "你是一个数学专家，擅长使用计算器、方程求解器和求导工具。请根据用户的输入选择合适的工具进行计算，并提供详细的解释。"),
+        ("human", question),
+    ]
+    model_with_tools = model.bind_tools(tools)
     response = model_with_tools.invoke(message)
-    #print("模型响应：", response.content)
-    #print("工具调用：", response.tool_calls)
     if not response.tool_calls:
         return response.content
     message.append(response)
     for tool_call in response.tool_calls:
-        tool = tool_map[tool_call['name']]
-        tool_message = tool.invoke(tool_call)
-        message.append(tool_message)
-
+        tool_name = tool_call['name']
+        if tool_name in tool_map:
+            select_tool = tool_map[tool_name]
+            tool_message = select_tool.invoke(tool_call)
+            message.append(tool_message)
+        else:
+            return f"工具 {tool_name} 未找到。"
     final_response = model_with_tools.invoke(message)
     return final_response.content
-print(ask_math_question(question))
+while True:
+    question = input("请输入数学问题（例如 'sin(pi / 2)的值'，'x + y = 5, x - y = 1'，'对 x 求导 x**2 + 3*x + 2'），退出请输入'exit'：")
+    if question.lower() == 'exit':
+        break
+    print(ask_math_question(question))
