@@ -1,8 +1,11 @@
+import ast
 from langchain_core.tools import tool
 import sympy as sp
+import operator
+
 
 @tool
-def matrix_calculator(matrix:list[list[list[float]]], operation:str):
+def matrix_calculator(matrix:list[list[list[int | float | str]]], operation:str):
     """
     对给定的矩阵进行计算。
     
@@ -17,9 +20,7 @@ def matrix_calculator(matrix:list[list[list[float]]], operation:str):
             return "输入为空，请提供一个矩阵和操作。"
         if not all(isinstance(row, list) for row in matrix):
             return "矩阵格式不正确，请提供一个二维列表。"
-        # if not all(isinstance(num, (int, float)) for row in matrix for num in row):
-        #     return "矩阵中只能包含数字。"
-
+ 
         unary_operations = {
                 "det": lambda A: A.det(),
                 "inv": lambda A: A.inv(),
@@ -40,6 +41,8 @@ def matrix_calculator(matrix:list[list[list[float]]], operation:str):
             mat = sp.Matrix(matrix[0])
             if operation in unary_operations:
                 result = unary_operations[operation](mat)
+                if isinstance(result, sp.MatrixBase):
+                    return f"操作 {operation} 的结果为：{result.tolist()}"
                 return f"操作 {operation} 的结果为：{result}"
             elif operation in binary_operations:
                 return "请提供两个矩阵进行二元操作。"
@@ -50,6 +53,7 @@ def matrix_calculator(matrix:list[list[list[float]]], operation:str):
                 mat1 = sp.Matrix(matrix[0])
                 mat2 = sp.Matrix(matrix[1])
                 result = binary_operations[operation](mat1, mat2)
-                return f"操作 {operation} 的结果为：{result}"
+                if isinstance(result,sp.MatrixBase):
+                    return f"操作 {operation} 的结果为：{result.tolist()}"
     except Exception as e:
         return f"计算过程中发生错误：{str(e)}"

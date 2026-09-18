@@ -16,7 +16,7 @@ def differentiate(expression:str, variable:str):
             return "输入为空，请提供一个数学表达式和变量。" 
         var = sp.symbols(variable)
         expr = sp.sympify(expression)
-        derivative = sp.diff(expr, var)
+        derivative = sp.simplify(sp.diff(expr, var))
         return f"对 {variable} 求导的结果为：{derivative}"
     except Exception as e:  
         return f"求导错误：{str(e)}"

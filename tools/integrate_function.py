@@ -22,10 +22,10 @@ def integrate_function(expression:str, variable:str, lower_limit:str | None=None
         if lower_limit is not None and upper_limit is not None:
             lower = sp.sympify(lower_limit)
             upper = sp.sympify(upper_limit)
-            integral = sp.integrate(expr, (var, lower, upper))
+            integral = sp.simplify(sp.integrate(expr, (var, lower, upper)))
             return f"定积分结果为：{integral}"
         elif lower_limit is None and upper_limit is None:
-            integral = sp.integrate(expr, var)
+            integral = sp.simplify(sp.integrate(expr, var))
             return f"不定积分结果为：{integral}"
         else:
             return "请提供完整的积分上下限，或者都不提供。"
