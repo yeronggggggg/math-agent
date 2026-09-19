@@ -1,4 +1,4 @@
-from langchain_core.messages import SystemMessage, ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage, HumanMessage
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -69,16 +69,24 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, ToolMessage
 from typing import TypedDict, Annotated
 import operator
+from pydantic import BaseModel,Field
 
 class AgentState(TypedDict):
-    messages: Annotated[list[AnyMessage], operator.add]
+    messages:Annotated[list[AnyMessage],operator.add]
+    plan:list[str]
 
+class MathPlan(BaseModel):
+    steps:list[str]=Field(
+        description="按照执行顺序排列的数学解题步骤"
+    )
 
 class Agent:
 
-    def __init__(self,model,tools,system=""):
+    def __init__(self,model,tools,system="",plan=""):
         self.system =system
+        self.plan =plan
         graph=StateGraph(AgentState)
+        graph.add_node("plan",self.make_plan)
         graph.add_node("llm",self.call_openai)
         graph.add_node("action",self.take_action)
         graph.add_conditional_edges(
@@ -87,15 +95,27 @@ class Agent:
             {True:"action",False:END}
         )
         graph.add_edge("action","llm")
-        graph.set_entry_point("llm")
+        graph.add_edge("plan","llm")
+        graph.set_entry_point("plan")
         self.graph=graph.compile()
         self.tools={t.name: t for t in tools}
         self.model=model.bind_tools(tools)
+        self.planner_model=model.with_structured_output(MathPlan,method="function_calling")#deepseek要求method=
+
+    def make_plan(self, state:AgentState):
+        plans=self.planner_model.invoke([
+            SystemMessage(content=self.plan),
+            state['messages'][-1]
+        ])#state['messages']是HumanMessage的列表，即[HumanMessage()]
+        print("生成的计划是：")
+        for i, step in enumerate (plans.steps,start=1):
+            print(f"{i},{step}")
+        return {"plan":plans.steps}
 
     def call_openai(self,state:AgentState):
-        messages=state["messages"]
-        if self.system:
-            messages=[SystemMessage(content=self.system)]+messages
+        plan_text="\n\n".join(state["plan"])
+        systemmessage=SystemMessage(content=self.system.format(content=plan_text))
+        messages=[systemmessage]+state["messages"]
         message=self.model.invoke(messages)
         return{'messages':[message]}
 
