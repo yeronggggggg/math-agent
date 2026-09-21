@@ -88,10 +88,9 @@ class MathVerify(BaseModel):
 
 class Agent:
 
-    def __init__(self,model,tools,system="",plan="",revision_count=0):
+    def __init__(self,model,tools,system="",plan=""):
         self.system =system
         self.plan =plan
-        self.revision_count=revision_count
         graph=StateGraph(AgentState)
         graph.add_node("plan",self.make_plan)
         graph.add_node("llm",self.call_openai)
@@ -179,7 +178,8 @@ class Agent:
         result={"verification":check.model_dump()} #model_dump把pydantic转换为python字典
         print(result)
         if not check.passed:
-            self.revision_count+=1
+            revision_count = state["revision_count"] + 1
+            result["revision_count"] = revision_count
             result["messages"]=[HumanMessage(content=f"检查反馈为{check.reasons}。请根据反馈修正答案")]
         return result
 
@@ -188,8 +188,8 @@ class Agent:
         return len(result.tool_calls)>0
 
     def exist_change(self,state:AgentState):
-        if self.revision_count==5:
-            print(f"检查未通过，原因是{state["verification"]["reasons"]}")
+        if state["revision_count"]>=5:
+            print(f"检查{state['revision_count']}次未通过，原因是{state["verification"]["reasons"]}")
             return True
         else:
             return state["verification"]["passed"]

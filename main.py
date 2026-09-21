@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+import sys#读取启动程序时写在命令后面的内容
 
 load_dotenv()
 # model = ChatOpenAI(
@@ -64,16 +65,30 @@ abot=Agent(model,tools,system=SYSTEM_PROMPT,plan=PLAN_PROMPT)
 # check_result = abot.verify_answer(test_state)
 # print(check_result)
 
+def solve_question(question:str):
+    messages = [HumanMessage(content=question)]
+    result = abot.graph.invoke({"messages": messages,"revision_count":0},config={"recursion_limit":50})#整张图运行步数上限
+    #result["verification"] = {"passed": False, "reasons": "测试失败提示"}
+    if result["verification"]["passed"]:
+        return f"检查通过\n最终回答：\n{result['messages'][-1].content}"
+    return f"检查未通过：{result['verification']['reasons']}\n本次没有已验证的答案。"
+
+
 
 while True:
-    question=input(f"请输入数学问题，退出请输入'exit'： ")
+    if len(sys.argv)>1:#sys.argv[0] 是脚本名，sys.argv[1] 是传入的题目。
+        question = " ".join(sys.argv[1:])
+    else:
+        question=input(f"请输入数学问题，退出请输入'exit'： ")
     if question.lower() == 'exit':
         break
-    messages = [HumanMessage(content=question)]
-    result = abot.graph.invoke({"messages": messages},config={"recursion_limit":20})
-    print(f"最终回答 \n {result['messages'][-1].content}")
+    print(solve_question(question))
 
-    # for event in abot.graph.stream({"messages": messages},config={"recursion_limit":20}, stream_mode="updates"):
+    if len(sys.argv) > 1:
+        break
+    
+
+    # for event in abot.graph.stream({"messages": messages},config={"recursion_limit":50}, stream_mode="updates"):
     #     node_name = next(iter(event))
     #     print("经过节点：", node_name)
         # print(event)
