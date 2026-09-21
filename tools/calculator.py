@@ -16,6 +16,8 @@ def calculator(expression:str):
         if not expression:
             return "输入为空，请提供一个数学表达式。"
         acc_result = sp.sympify(expression)
+        if acc_result in (sp.zoo, sp.nan):
+            return "计算错误：表达式未定义，可能存在除以零。"
         app_result = sp.N(acc_result)
         return f"精确结果为 {acc_result}，近似结果为 {app_result}"
     except Exception as e:
