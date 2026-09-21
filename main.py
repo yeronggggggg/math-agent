@@ -1,6 +1,6 @@
 from agent import Agent
 from tools import calculator, solve_equation, differentiate, integrate_function, matrix_calculator
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -54,6 +54,17 @@ abot=Agent(model,tools,system=SYSTEM_PROMPT,plan=PLAN_PROMPT)
 # png_data = abot.graph.get_graph().draw_mermaid_png()
 # Image.open(BytesIO(png_data)).show()
 
+# test_state = {
+#     "messages": [
+#         HumanMessage(content="求 f(x)=x**3-3*x 的极值"),
+#         AIMessage(content="x=1 处取得极小值 2。")
+#     ]
+# }
+
+# check_result = abot.verify_answer(test_state)
+# print(check_result)
+
+
 while True:
     question=input(f"请输入数学问题，退出请输入'exit'： ")
     if question.lower() == 'exit':
@@ -62,7 +73,7 @@ while True:
     result = abot.graph.invoke({"messages": messages},config={"recursion_limit":20})
     print(f"最终回答 \n {result['messages'][-1].content}")
 
-    for event in abot.graph.stream({"messages": messages},config={"recursion_limit":20}, stream_mode="updates"):
-        node_name = next(iter(event))
-        print("经过节点：", node_name)
-        #print(event)
+    # for event in abot.graph.stream({"messages": messages},config={"recursion_limit":20}, stream_mode="updates"):
+    #     node_name = next(iter(event))
+    #     print("经过节点：", node_name)
+        # print(event)
