@@ -10,11 +10,6 @@ model = ChatOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY")
 )
 
-from tools import calculator, solve_equation, differentiate, integrate_function, matrix_calculator
-
-tools = [calculator, solve_equation, differentiate, integrate_function, matrix_calculator]
-tool_map={tool.name: tool for tool in tools}
-model_with_tools = model.bind_tools(tools)
 
 # def ask_math_question(question:str):
 #     max_steps = 10
@@ -148,6 +143,7 @@ class Agent:
                 result="工具不存在"
             else:
                 result=self.tools[t["name"]].invoke(t["args"])
+                print(f"{t['name']} 工具结果：{result}")
             results.append (ToolMessage(tool_call_id=t["id"],name=t["name"],content=str(result)))
         print("返回模型")
         return {'messages':results}
@@ -186,6 +182,7 @@ class Agent:
     def exist_action(self,state:AgentState):
         result = state["messages"][-1]
         return len(result.tool_calls)>0
+
 
     def exist_change(self,state:AgentState):
         if state["revision_count"]>=5:

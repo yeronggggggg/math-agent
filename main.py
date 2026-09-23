@@ -1,5 +1,5 @@
 from agent import Agent
-from tools import calculator, solve_equation, differentiate, integrate_function, matrix_calculator
+from tools import __all__
 from langchain_core.messages import HumanMessage, AIMessage
 import os
 from dotenv import load_dotenv
@@ -12,7 +12,6 @@ load_dotenv()
 #     base_url="https://api.deepseek.com",
 #     api_key=os.getenv("DEEPSEEK_API_KEY")
 # )
-
 model = ChatOpenAI(
     model="deepseek-flash",
     api_key=os.getenv("DEEPSEEK_API_KEY"),
@@ -33,11 +32,16 @@ PLAN_PROMPT="""
 
 """
 SYSTEM_PROMPT=""""你是一个非常聪明的数学助手，使用工具来解决数学问题。\
-你可以进行多次调用\
-只能在确定工具的时候进行使用\
-请根据给出的解题计划{content}选择合适的工具进行计算，给出详细答案。
+你可以进行多次调用。\
+只能在确定工具的时候进行使用。\
+请根据给出的解题计划{content}选择合适的工具进行计算，给出答案。\
+工具执行完成后，最终回答必须使用统一格式：\
+结果：<最终结果>\
+说明：<最多两句话的必要说明>\
 """
-tools = [calculator, solve_equation, differentiate, integrate_function, matrix_calculator]
+
+
+tools = __all__
 #tools={tool.name: tool for tool in cal_tools}
 abot=Agent(model,tools,system=SYSTEM_PROMPT,plan=PLAN_PROMPT)
 

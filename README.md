@@ -1,6 +1,6 @@
 # Math Agent
 
-A tool-using AI agent for solving and verifying mathematical problems.
+一个支持基础代数、微积分和线性代数运算，并能连续调用多个数学工具的 Math Agent V1。
 
 
 ## 测试结果
